@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Открыть канал в Telegram</title>
+  <meta name="description" content="Мгновенный переход в канал Telegram" />
+  <meta property="og:title" content="Присоединяйся к нашему каналу" />
+  <meta property="og:description" content="Нажми кнопку и сразу откроется Telegram" />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="" />
+
+  <style>
+    :root { --bg:#0b0f14; --fg:#e8eef6; --muted:#9fb1c6; --accent:#2dd4bf; --line:rgba(255,255,255,.08);}    
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; display:flex; align-items:center; justify-content:center; 
+      background: radial-gradient(1200px 600px at 70% -10%, #0f172a, transparent),
+                  radial-gradient(900px 500px at -10% 120%, #0a0f1f, transparent),
+                  var(--bg);
+      color:var(--fg); font:16px/1.45 system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+      padding: 24px;
+    }
+    .card{
+      width:min(760px, 96vw); padding:22px; border-radius:24px; 
+      background:rgba(255,255,255,0.04); backdrop-filter: blur(6px);
+      box-shadow: 0 10px 30px rgba(0,0,0,.35);
+      border:1px solid var(--line);
+    }
+    .header{display:flex; gap:16px; align-items:center; padding-bottom:16px; border-bottom:1px solid var(--line)}
+    .avatar{width:64px; height:64px; border-radius:50%; background:#111; overflow:hidden; flex:0 0 64px; border:1px solid var(--line)}
+    .avatar img{width:100%; height:100%; object-fit:cover}
+    .title{font-size:22px; font-weight:800; letter-spacing:.2px; margin:0}
+    .meta{display:flex; gap:10px; color:var(--muted); font-size:14px; margin-top:4px; flex-wrap:wrap}
+    .desc{color:#c9d7ea; margin:16px 0 18px}
+
+    .cta{
+      appearance:none; border:0; cursor:pointer; width:100%; padding:16px 18px;
+      border-radius:16px; font-weight:800; font-size:18px; 
+      background:linear-gradient(90deg, var(--accent), #60a5fa);
+      color:#0b1020; box-shadow:0 10px 24px rgba(45,212,191,.25);
+      transition: transform .08s ease, box-shadow .2s ease;
+    }
+    .cta:active{ transform: translateY(1px); }
+    .hint{font-size:13px; color:#a8b3c7; margin-top:10px}
+    .mini{font-size:12px; opacity:.7; margin-top:12px; text-align:center}
+    .logo{display:inline-flex; gap:10px; align-items:center; margin-bottom:14px}
+    .logo svg{width:28px;height:28px}
+    a.sec{display:inline-block; margin-top:10px; color:#c3dafe; text-decoration:underline dotted}
+  </style>
+
+  <!-- Facebook Pixel (ID: 4050619405266778) -->
+  <script>
+    !function(f,b,e,v,n,t,s)
+    {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+    n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+    if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+    n.queue=[];t=b.createElement(e);t.async=!0;
+    t.src=v;s=b.getElementsByTagName(e)[0];
+    s.parentNode.insertBefore(t,s)}(window, document,'script','https://connect.facebook.net/en_US/fbevents.js');
+    fbq('init', '4050619405266778');
+    fbq('track', 'PageView');
+  </script>
+  <noscript>
+    <img height="1" width="1" style="display:none" alt=""
+         src="https://www.facebook.com/tr?id=4050619405266778&ev=PageView&noscript=1"/>
+  </noscript>
+  <!-- /Facebook Pixel -->
+</head>
+<body>
+  <main class="card">
+    <div class="header">
+      <div class="avatar"><img id="avatar" src="avatar.jpg" alt="Аватар канала"></div>
+      <div>
+        <h1 id="title" class="title">Название канала</h1>
+        <div class="meta">
+          <span id="subscribers">0 подписчиков</span>
+          <span>•</span>
+          <span id="visibility">Private</span>
+        </div>
+      </div>
+    </div>
+
+    <p id="description" class="desc">Краткое описание канала будет здесь. Заполни это поле, чтобы совпадало с карточкой Telegram.</p>
+
+    <button id="joinBtn" class="cta">Перейти в канал в Telegram</button>
+    <div class="hint">Если Telegram не откроется автоматически, используйте альтернативную ссылку ниже.</div>
+    <a id="fallbackLink" class="sec" href="#" rel="noreferrer noopener">Открыть через браузер</a>
+
+    <div class="mini">© <span id="year"></span> · Партнёрская страница</div>
+  </main>
+
+  <script>
+    // ================== КОНФИГ ==================
+    // Для приватных/инвайт-ссылок авто-подтягивание данных из Telegram недоступно из браузера (CORS/нет публичного API),
+    // поэтому укажи метаданные вручную здесь или через CMS/JSON.
+    const CONFIG = {
+      link: 'https://t.me/+IXPjQlvhmnk3OTli', // твой инвайт
+      title: '👨‍💻 Халықтық трейдер',               // как в Telegram
+      description: 'Мен өз жолымды таптым – енді бөлісетін уақытым келді.',
+      subscribers: 3 601,                          // число подписчиков
+      visibility: 'Private',                   // Private / Public
+      avatar: 'avatar.jpg'                     // положи файл в корень репозитория
+    };
+    // ============================================
+
+    // Проставляем год
+    document.getElementById('year').textContent = new Date().getFullYear();
+
+    // Наполняем карточку
+    document.getElementById('title').textContent = CONFIG.title;
+    document.getElementById('description').textContent = CONFIG.description;
+    document.getElementById('subscribers').textContent = new Intl.NumberFormat('ru-RU').format(CONFIG.subscribers) + ' подписчиков';
+    document.getElementById('visibility').textContent = CONFIG.visibility;
+    document.getElementById('avatar').src = CONFIG.avatar;
+
+    // Ссылки
+    document.getElementById('fallbackLink').href = CONFIG.link;
+
+    // Кнопка и трекинг
+    function openTelegram(){
+      try { fbq('trackCustom', 'JoinChannelClick', { link: CONFIG.link }); } catch(e) {}
+      window.location.href = CONFIG.link;
+    }
+    document.getElementById('joinBtn').addEventListener('click', openTelegram);
+  </script>
+
+  <!-- Вариант для ПУБЛИЧНЫХ каналов (НЕ инвайт-линков): автоматическая карточка Telegram
+       Раскомментируй блок ниже и укажи публичный username вместо использования ручного CONFIG.
+
+  <script async src="https://telegram.org/js/telegram-widget.js?22" data-telegram-channel="public_username" data-radius="16" data-dark="1" data-width="100%" data-comment="false"></script>
+
+  -->
+</body>
+</html>
