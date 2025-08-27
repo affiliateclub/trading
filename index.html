@@ -91,40 +91,83 @@
     <div class="mini">© <span id="year"></span> · Партнёрская страница</div>
   </main>
 
-  <script>
-    // ================== КОНФИГ ==================
-    // Для приватных/инвайт-ссылок авто-подтягивание данных из Telegram недоступно из браузера (CORS/нет публичного API),
-    // поэтому укажи метаданные вручную здесь или через CMS/JSON.
-    const CONFIG = {
-      link: 'https://t.me/+IXPjQlvhmnk3OTli', // твой инвайт
-      title: 'Халықтық трейдер',               // как в Telegram
-      description: 'Мен өз жолымды таптым – енді бөлісетін уақытым келді.',
-      subscribers: 3601,                          // число подписчиков
-      visibility: 'Private',                   // Private / Public
-      avatar: 'avatar.jpg'                     // положи файл в корень репозитория
-    };
-    // ============================================
+<script>
+  // ================== КОНФИГ ==================
+  const CONFIG = {
+    link: 'https://t.me/+IXPjQlvhmnk3OTli', // твой инвайт
+    title: 'Халықтық трейдер',
+    description: 'Мен өз жолымды таптым – енді бөлісетін уақытым келді.',
+    subscribers: 3601,
+    visibility: 'Private',
+    avatar: 'avatar.jpg'
+  };
+  // ============================================
 
-    // Проставляем год
-    document.getElementById('year').textContent = new Date().getFullYear();
+  // Проставляем год
+  document.getElementById('year').textContent = new Date().getFullYear();
 
-    // Наполняем карточку
-    document.getElementById('title').textContent = CONFIG.title;
-    document.getElementById('description').textContent = CONFIG.description;
-    document.getElementById('subscribers').textContent = new Intl.NumberFormat('ru-RU').format(CONFIG.subscribers) + ' подписчиков';
-    document.getElementById('visibility').textContent = CONFIG.visibility;
-    document.getElementById('avatar').src = CONFIG.avatar;
+  // Наполняем карточку
+  document.getElementById('title').textContent = CONFIG.title;
+  document.getElementById('description').textContent = CONFIG.description;
+  document.getElementById('subscribers').textContent =
+    new Intl.NumberFormat('ru-RU').format(CONFIG.subscribers) + ' подписчиков';
+  document.getElementById('visibility').textContent = CONFIG.visibility;
+  document.getElementById('avatar').src = CONFIG.avatar;
 
-    // Ссылки
-    document.getElementById('fallbackLink').href = CONFIG.link;
+  // Ссылки
+  document.getElementById('fallbackLink').href = CONFIG.link;
 
-    // Кнопка и трекинг
-    function openTelegram(){
-      try { fbq('trackCustom', 'JoinChannelClick', { link: CONFIG.link }); } catch(e) {}
-      window.location.href = CONFIG.link;
+  // ==== Формируем app-deeplink для инвайт-ссылки ====
+  // https://t.me/+HASH  ->  tg://join?invite=HASH
+  function buildDeepLinks(tme) {
+    const inviteMatch = tme.match(/t\.me\/\+([A-Za-z0-9_\-]+)/);
+    let tgApp = null, androidIntent = null;
+
+    if (inviteMatch) {
+      const code = inviteMatch[1];
+      tgApp = `tg://join?invite=${code}`;
+      // Android intent с fallback обратно на веб
+      androidIntent =
+        `intent://join?invite=${code}` +
+        `#Intent;scheme=tg;package=org.telegram.messenger;` +
+        `S.browser_fallback_url=${encodeURIComponent(tme)};end`;
     }
-    document.getElementById('joinBtn').addEventListener('click', openTelegram);
-  </script>
+    return { tgApp, androidIntent };
+  }
+
+  const { tgApp: TG_APP_URL, androidIntent: ANDROID_INTENT } = buildDeepLinks(CONFIG.link);
+
+  // ==== Открытие Telegram по клику ====
+  function openTelegram() {
+    try { fbq('trackCustom', 'JoinChannelClick', { link: CONFIG.link }); } catch (e) {}
+
+    const ua = navigator.userAgent || '';
+    const isAndroid = /Android/i.test(ua);
+
+    // 1) Сначала пробуем открыть приложение
+    if (isAndroid && ANDROID_INTENT) {
+      // В Chrome на Android intent-URL самый надёжный
+      window.location.href = ANDROID_INTENT;
+    } else if (TG_APP_URL) {
+      // iOS/другие — обычный tg://
+      window.location.href = TG_APP_URL;
+    } else {
+      // На всякий случай, если не распарсили, сразу веб
+      window.location.href = CONFIG.link;
+      return;
+    }
+
+    // 2) Если приложение не открылось — мягкий возврат на веб через 900–1200мс
+    setTimeout(() => {
+      // показываем ссылку и уходим на веб-страницу канала
+      const a = document.getElementById('fallbackLink');
+      if (a) a.style.display = 'inline-block';
+      window.location.href = CONFIG.link + (location.search || '');
+    }, isAndroid ? 1200 : 900);
+  }
+
+  document.getElementById('joinBtn').addEventListener('click', openTelegram);
+</script>
 
   <!-- Вариант для ПУБЛИЧНЫХ каналов (НЕ инвайт-линков): автоматическая карточка Telegram
        Раскомментируй блок ниже и укажи публичный username вместо использования ручного CONFIG.
