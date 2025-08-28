@@ -50,7 +50,7 @@
     a.sec{display:inline-block; margin-top:10px; color:#c3dafe; text-decoration:underline dotted}
   </style>
 
-  <!-- Facebook Pixel (ID: 4050619405266778) -->
+  <!-- Facebook Pixel -->
   <script>
     !function(f,b,e,v,n,t,s)
     {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -66,7 +66,6 @@
     <img height="1" width="1" style="display:none" alt=""
          src="https://www.facebook.com/tr?id=4050619405266778&ev=PageView&noscript=1"/>
   </noscript>
-  <!-- /Facebook Pixel -->
 </head>
 <body>
   <main class="card">
@@ -94,39 +93,31 @@
 <script>
   // ================== КОНФИГ ==================
   const CONFIG = {
-    link: 'https://t.me/+IXPjQlvhmnk3OTli', // твой инвайт
+    link: 'https://t.me/+IXPjQlvhmnk3OTli',
     title: 'Халық трейдеры',
     description: 'Мен өз жолымды таптым – енді бөлісетін уақытым келді.',
     subscribers: 3601,
     visibility: 'Private',
     avatar: 'avatar.jpg'
   };
-  // ============================================
 
-  // Проставляем год
+  // === Заполняем карточку ===
   document.getElementById('year').textContent = new Date().getFullYear();
-
-  // Наполняем карточку
   document.getElementById('title').textContent = CONFIG.title;
   document.getElementById('description').textContent = CONFIG.description;
   document.getElementById('subscribers').textContent =
     new Intl.NumberFormat('ru-RU').format(CONFIG.subscribers) + ' подписчиков';
   document.getElementById('visibility').textContent = CONFIG.visibility;
   document.getElementById('avatar').src = CONFIG.avatar;
-
-  // Ссылки
   document.getElementById('fallbackLink').href = CONFIG.link;
 
-  // ==== Формируем app-deeplink для инвайт-ссылки ====
-  // https://t.me/+HASH  ->  tg://join?invite=HASH
+  // === Генерим deeplink ===
   function buildDeepLinks(tme) {
     const inviteMatch = tme.match(/t\.me\/\+([A-Za-z0-9_\-]+)/);
     let tgApp = null, androidIntent = null;
-
     if (inviteMatch) {
       const code = inviteMatch[1];
       tgApp = `tg://join?invite=${code}`;
-      // Android intent с fallback обратно на веб
       androidIntent =
         `intent://join?invite=${code}` +
         `#Intent;scheme=tg;package=org.telegram.messenger;` +
@@ -134,46 +125,47 @@
     }
     return { tgApp, androidIntent };
   }
-
   const { tgApp: TG_APP_URL, androidIntent: ANDROID_INTENT } = buildDeepLinks(CONFIG.link);
 
-  // ==== Открытие Telegram по клику ====
-  function openTelegram() {
-    try { fbq('trackCustom', 'JoinChannelClick', { link: CONFIG.link }); } catch (e) {}
+  // === Трекер событий ===
+  function trackSubscribe(extra={}) {
+    const payload = Object.assign({ link: CONFIG.link, title: CONFIG.title }, extra);
+    try {
+      fbq('track', 'Subscribe', payload);              // стандартное событие
+      fbq('trackCustom', 'JoinChannelClick', payload); // кастом для аналитики
+    } catch(e){}
+  }
 
-    const ua = navigator.userAgent || '';
+  // Переход с задержкой
+  function safeGo(url, delay=320){ setTimeout(()=>{window.location.href=url}, delay); }
+
+  // Обработчик
+  function openTelegram() {
+    const ua = navigator.userAgent||'';
     const isAndroid = /Android/i.test(ua);
 
-    // 1) Сначала пробуем открыть приложение
+    trackSubscribe({ placement:'primaryCTA' });
+
     if (isAndroid && ANDROID_INTENT) {
-      // В Chrome на Android intent-URL самый надёжный
-      window.location.href = ANDROID_INTENT;
+      safeGo(ANDROID_INTENT,360);
     } else if (TG_APP_URL) {
-      // iOS/другие — обычный tg://
-      window.location.href = TG_APP_URL;
+      safeGo(TG_APP_URL,320);
     } else {
-      // На всякий случай, если не распарсили, сразу веб
-      window.location.href = CONFIG.link;
+      safeGo(CONFIG.link,0);
       return;
     }
 
-    // 2) Если приложение не открылось — мягкий возврат на веб через 900–1200мс
-    setTimeout(() => {
-      // показываем ссылку и уходим на веб-страницу канала
-      const a = document.getElementById('fallbackLink');
-      if (a) a.style.display = 'inline-block';
-      window.location.href = CONFIG.link + (location.search || '');
-    }, isAndroid ? 1200 : 900);
+    setTimeout(()=>{
+      const a=document.getElementById('fallbackLink');
+      if(a) a.style.display='inline-block';
+      window.location.href=CONFIG.link+(location.search||'');
+    }, isAndroid?1200:900);
   }
 
+  // Навешиваем слушатели
   document.getElementById('joinBtn').addEventListener('click', openTelegram);
+  document.getElementById('fallbackLink').addEventListener('click', ()=>trackSubscribe({placement:'fallback'}));
 </script>
 
-  <!-- Вариант для ПУБЛИЧНЫХ каналов (НЕ инвайт-линков): автоматическая карточка Telegram
-       Раскомментируй блок ниже и укажи публичный username вместо использования ручного CONFIG.
-
-  <script async src="https://telegram.org/js/telegram-widget.js?22" data-telegram-channel="public_username" data-radius="16" data-dark="1" data-width="100%" data-comment="false"></script>
-
-  -->
 </body>
 </html>
