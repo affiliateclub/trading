@@ -164,7 +164,17 @@
 
   // Навешиваем слушатели
   document.getElementById('joinBtn').addEventListener('click', openTelegram);
-  document.getElementById('fallbackLink').addEventListener('click', ()=>trackSubscribe({placement:'fallback'}));
+document.getElementById('fallbackLink').addEventListener('click', (e) => {
+  try {
+    fbq('track','Subscribe', { placement:'fallback', link: CONFIG.link });
+    fbq('trackCustom','JoinChannelClick', { placement:'fallback', link: CONFIG.link });
+  } catch(e){}
+  // добавляем микро-паузу ~220мс, чтобы события успели улететь
+  e.preventDefault();
+  setTimeout(() => {
+    window.location.href = CONFIG.link;
+  }, 220);
+});
 </script>
 
 </body>
